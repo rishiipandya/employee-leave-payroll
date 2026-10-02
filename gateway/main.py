@@ -1,6 +1,8 @@
 import os
 import jwt
 import httpx
+import os
+import os
 
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +17,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SECRET_KEY = "college-project-secret"
+SECRET_KEY = os.getenv("JWT_SECRET", "college-project-secret")
 
 SERVICES = {
     "auth": os.getenv("AUTH_URL", "http://localhost:8001"),

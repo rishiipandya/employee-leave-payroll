@@ -4,6 +4,8 @@ from pydantic import BaseModel
 from datetime import datetime, timedelta
 import jwt
 import hashlib
+import os
+import os
 
 app = FastAPI(title="Authentication Service")
 
@@ -14,7 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SECRET_KEY = "college-project-secret"
+SECRET_KEY = os.getenv("JWT_SECRET", "college-project-secret")
 
 users = {
     "employee": {

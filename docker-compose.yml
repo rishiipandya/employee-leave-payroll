@@ -6,6 +6,8 @@ services:
     container_name: auth-service
     ports:
       - "8001:8001"
+    environment:
+      JWT_SECRET: college-project-secret
 
   employee-service:
     build:
@@ -35,6 +37,7 @@ services:
     ports:
       - "8000:8000"
     environment:
+      JWT_SECRET: college-project-secret
       AUTH_URL: http://auth-service:8001
       EMPLOYEE_URL: http://employee-service:8002
       LEAVE_URL: http://leave-service:8003

@@ -1,4 +1,6 @@
-const API = `http://${window.location.hostname}:30081`;
+const API = window.location.port === "5500"
+  ? "http://localhost:8000"
+  : `http://${window.location.hostname}:30081`;
 
 let currentUser = null;
 let token = null;
