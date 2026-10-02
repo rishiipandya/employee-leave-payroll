@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: employee-config
+  namespace: employee-system
+data:
+  AUTH_URL: "http://auth-service:8001"
+  EMPLOYEE_URL: "http://employee-service:8002"
+  LEAVE_URL: "http://leave-service:8003"
+  PAYROLL_URL: "http://payroll-service:8004"

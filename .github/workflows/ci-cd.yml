@@ -1,0 +1,48 @@
+name: CI-CD
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+
+  build-and-validate:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          pip install fastapi uvicorn PyJWT httpx
+
+      - name: Validate Python files
+        run: |
+          python -m py_compile backend/auth-service/main.py
+          python -m py_compile backend/employee-service/main.py
+          python -m py_compile backend/leave-service/main.py
+          python -m py_compile backend/payroll-service/main.py
+          python -m py_compile gateway/main.py
+
+      - name: Build Docker images
+        run: |
+          docker build -t employee-auth ./backend/auth-service
+          docker build -t employee-service ./backend/employee-service
+          docker build -t employee-leave ./backend/leave-service
+          docker build -t employee-payroll ./backend/payroll-service
+          docker build -t employee-gateway ./gateway
+
+      - name: CI completed
+        run: echo "Build and validation completed successfully"

@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Employee Leave & Payroll</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <!-- LOGIN PAGE -->
+
+    <div id="loginPage" class="page">
+
+        <div class="login-box">
+
+            <h1>Employee Management</h1>
+
+            <p>Leave & Payroll System</p>
+
+            <input
+                id="username"
+                placeholder="Username"
+                value="employee"
+            >
+
+            <input
+                id="password"
+                type="password"
+                placeholder="Password"
+                value="1234"
+            >
+
+            <button onclick="login()">Login</button>
+
+            <div class="demo">
+
+                <b>Demo Accounts</b>
+
+                <br><br>
+
+                Employee:
+                employee / 1234
+
+                <br>
+
+                Manager:
+                manager / 1234
+
+                <br>
+
+                Admin:
+                admin / 1234
+
+            </div>
+
+            <p id="loginMessage"></p>
+
+        </div>
+
+    </div>
+
+
+    <!-- DASHBOARD -->
+
+    <div id="dashboard" class="hidden">
+
+        <header>
+
+            <div>
+
+                <h1>Employee Leave & Payroll</h1>
+
+                <p>Microservices & DevOps Project</p>
+
+            </div>
+
+            <button onclick="logout()">Logout</button>
+
+        </header>
+
+
+        <div class="container">
+
+            <!-- USER INFORMATION -->
+
+            <div class="welcome card">
+
+                <h2>
+                    Welcome,
+                    <span id="userName"></span>
+                </h2>
+
+                <p>
+                    Role:
+                    <b id="userRole"></b>
+                </p>
+
+            </div>
+
+
+            <!-- ACTION BUTTONS -->
+
+            <div class="actions">
+
+                <button onclick="showLeaveForm()">
+                    Apply Leave
+                </button>
+
+                <button onclick="loadLeaves()">
+                    My Leave Status
+                </button>
+
+                <button onclick="loadPayroll()">
+                    My Payroll
+                </button>
+
+                <button
+                    id="managerButton"
+                    class="hidden"
+                    onclick="loadAllLeaves()"
+                >
+                    Manage Leave Requests
+                </button>
+
+            </div>
+
+
+            <!-- LEAVE FORM -->
+
+            <div id="leaveForm" class="card hidden">
+
+                <h2>Apply for Leave</h2>
+
+                <select id="leaveType">
+
+                    <option>Casual Leave</option>
+
+                    <option>Sick Leave</option>
+
+                    <option>Annual Leave</option>
+
+                </select>
+
+                <input
+                    id="fromDate"
+                    type="date"
+                >
+
+                <input
+                    id="toDate"
+                    type="date"
+                >
+
+                <input
+                    id="reason"
+                    placeholder="Reason"
+                >
+
+                <button onclick="applyLeave()">
+                    Submit Leave
+                </button>
+
+            </div>
+
+
+            <!-- CONTENT -->
+
+            <div id="content" class="card">
+
+                <h2>Dashboard</h2>
+
+                <p>Select an option above.</p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>

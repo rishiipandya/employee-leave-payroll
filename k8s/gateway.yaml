@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: gateway
+  namespace: employee-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway
+  template:
+    metadata:
+      labels:
+        app: gateway
+    spec:
+      containers:
+        - name: gateway
+          image: employee-leave-payroll-gateway:latest
+          imagePullPolicy: Never
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "128Mi"
+            limits:
+              cpu: "500m"
+              memory: "256Mi"
+          ports:
+            - containerPort: 8000
+          env:
+            - name: AUTH_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: employee-config
+                  key: AUTH_URL
+            - name: EMPLOYEE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: employee-config
+                  key: EMPLOYEE_URL
+            - name: LEAVE_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: employee-config
+                  key: LEAVE_URL
+            - name: PAYROLL_URL
+              valueFrom:
+                configMapKeyRef:
+                  name: employee-config
+                  key: PAYROLL_URL
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: employee-system
+spec:
+  type: NodePort
+  selector:
+    app: gateway
+  ports:
+    - port: 8000
+      targetPort: 8000
+      nodePort: 30081

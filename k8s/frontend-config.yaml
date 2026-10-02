@@ -1,0 +1,705 @@
+apiVersion: v1
+data:
+  app.js: |-
+    const API = "http://localhost:8000";
+
+    let currentUser = null;
+    let token = null;
+
+
+    // ====================
+    // LOGIN
+    // ====================
+
+    async function login() {
+
+        const username =
+            document.getElementById("username").value;
+
+        const password =
+            document.getElementById("password").value;
+
+        try {
+
+            const response = await fetch(
+                `${API}/auth/login`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                }
+            );
+
+            if (!response.ok) {
+                throw new Error("Login failed");
+            }
+
+            const data = await response.json();
+
+            token = data.access_token;
+
+            currentUser = {
+                id: data.user_id,
+                name: data.name,
+                role: data.role
+            };
+
+            document
+                .getElementById("loginPage")
+                .classList.add("hidden");
+
+            document
+                .getElementById("dashboard")
+                .classList.remove("hidden");
+
+            document.getElementById("userName").textContent =
+                currentUser.name;
+
+            document.getElementById("userRole").textContent =
+                currentUser.role;
+
+
+            // Show manager controls
+
+            if (
+                currentUser.role === "MANAGER" ||
+                currentUser.role === "ADMIN"
+            ) {
+
+                document
+                    .getElementById("managerButton")
+                    .classList.remove("hidden");
+            }
+
+        } catch (error) {
+
+            document.getElementById("loginMessage").textContent =
+                "Invalid username or password";
+        }
+    }
+
+
+    // ====================
+    // LOGOUT
+    // ====================
+
+    function logout() {
+
+        token = null;
+
+        currentUser = null;
+
+        document
+            .getElementById("dashboard")
+            .classList.add("hidden");
+
+        document
+            .getElementById("loginPage")
+            .classList.remove("hidden");
+    }
+
+
+    // ====================
+    // LEAVE FORM
+    // ====================
+
+    function showLeaveForm() {
+
+        document
+            .getElementById("leaveForm")
+            .classList.remove("hidden");
+    }
+
+
+    // ====================
+    // APPLY LEAVE
+    // ====================
+
+    async function applyLeave() {
+
+        const leave = {
+
+            employee_id: currentUser.id,
+
+            employee_name: currentUser.name,
+
+            leave_type:
+                document.getElementById("leaveType").value,
+
+            from_date:
+                document.getElementById("fromDate").value,
+
+            to_date:
+                document.getElementById("toDate").value,
+
+            reason:
+                document.getElementById("reason").value
+        };
+
+
+        const response = await fetch(
+            `${API}/leaves`,
+            {
+                method: "POST",
+
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${token}`
+                },
+
+                body: JSON.stringify(leave)
+            }
+        );
+
+
+        const data = await response.json();
+
+        document.getElementById("content").innerHTML =
+            `<h2>${data.message}</h2>`;
+
+        loadLeaves();
+    }
+
+
+    // ====================
+    // MY LEAVE STATUS
+    // ====================
+
+    async function loadLeaves() {
+
+        const response = await fetch(
+            `${API}/leaves/${currentUser.id}`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+
+        const leaves = await response.json();
+
+        let html = "<h2>My Leave Requests</h2>";
+
+
+        if (leaves.length === 0) {
+
+            html += "<p>No leave requests found.</p>";
+
+        } else {
+
+            leaves.forEach(leave => {
+
+                html += `
+                    <div class="item">
+
+                        <b>${leave.leave_type}</b>
+
+                        <p>
+                            ${leave.from_date}
+                            →
+                            ${leave.to_date}
+                        </p>
+
+                        <p>
+                            Reason:
+                            ${leave.reason}
+                        </p>
+
+                        <span class="status ${leave.status.toLowerCase()}">
+                            ${leave.status}
+                        </span>
+
+                    </div>
+                `;
+            });
+        }
+
+
+        document.getElementById("content").innerHTML =
+            html;
+    }
+
+
+    // ====================
+    // MANAGER - ALL LEAVES
+    // ====================
+
+    async function loadAllLeaves() {
+
+        const response = await fetch(
+            `${API}/leaves`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+
+        const leaves = await response.json();
+
+        let html = "<h2>Leave Requests</h2>";
+
+
+        leaves.forEach(leave => {
+
+            html += `
+                <div class="item">
+
+                    <b>${leave.employee_name}</b>
+
+                    <p>
+                        ${leave.leave_type}
+                    </p>
+
+                    <p>
+                        ${leave.from_date}
+                        →
+                        ${leave.to_date}
+                    </p>
+
+                    <p>
+                        Status:
+                        <b>${leave.status}</b>
+                    </p>
+
+                    ${
+                        leave.status === "PENDING"
+                        ?
+                        `
+                        <button
+                            onclick="updateLeave(${leave.id}, 'approve')"
+                        >
+                            Approve
+                        </button>
+
+                        <button
+                            onclick="updateLeave(${leave.id}, 'reject')"
+                        >
+                            Reject
+                        </button>
+                        `
+                        :
+                        ""
+                    }
+
+                </div>
+            `;
+        });
+
+
+        document.getElementById("content").innerHTML =
+            html;
+    }
+
+
+    // ====================
+    // APPROVE / REJECT
+    // ====================
+
+    async function updateLeave(id, action) {
+
+        await fetch(
+            `${API}/leaves/${id}/${action}`,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+
+        loadAllLeaves();
+    }
+
+
+    // ====================
+    // PAYROLL
+    // ====================
+
+    async function loadPayroll() {
+
+        const response = await fetch(
+            `${API}/payroll/${currentUser.id}`,
+            {
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                }
+            }
+        );
+
+        const records = await response.json();
+
+        let html = "<h2>Payroll Information</h2>";
+
+
+        if (records.length === 0) {
+
+            html += "<p>No payroll records found.</p>";
+
+        } else {
+
+            records.forEach(record => {
+
+                html += `
+                    <div class="item">
+
+                        <p>
+                            <b>Month:</b>
+                            ${record.month}
+                        </p>
+
+                        <p>
+                            Basic Salary:
+                            ₹${record.basic_salary}
+                        </p>
+
+                        <p>
+                            Allowances:
+                            ₹${record.allowances}
+                        </p>
+
+                        <p>
+                            Deductions:
+                            ₹${record.deductions}
+                        </p>
+
+                        <h3>
+                            Net Salary:
+                            ₹${record.net_salary}
+                        </h3>
+
+                        <span class="status approved">
+                            ${record.status}
+                        </span>
+
+                    </div>
+                `;
+            });
+        }
+
+
+        document.getElementById("content").innerHTML =
+            html;
+    }
+  index.html: |-
+    <!DOCTYPE html>
+    <html lang="en">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+        <title>Employee Leave & Payroll</title>
+
+        <link rel="stylesheet" href="style.css">
+    </head>
+
+    <body>
+
+        <!-- LOGIN PAGE -->
+
+        <div id="loginPage" class="page">
+
+            <div class="login-box">
+
+                <h1>Employee Management</h1>
+
+                <p>Leave & Payroll System</p>
+
+                <input
+                    id="username"
+                    placeholder="Username"
+                    value="employee"
+                >
+
+                <input
+                    id="password"
+                    type="password"
+                    placeholder="Password"
+                    value="1234"
+                >
+
+                <button onclick="login()">Login</button>
+
+                <div class="demo">
+
+                    <b>Demo Accounts</b>
+
+                    <br><br>
+
+                    Employee:
+                    employee / 1234
+
+                    <br>
+
+                    Manager:
+                    manager / 1234
+
+                    <br>
+
+                    Admin:
+                    admin / 1234
+
+                </div>
+
+                <p id="loginMessage"></p>
+
+            </div>
+
+        </div>
+
+
+        <!-- DASHBOARD -->
+
+        <div id="dashboard" class="hidden">
+
+            <header>
+
+                <div>
+
+                    <h1>Employee Leave & Payroll</h1>
+
+                    <p>Microservices & DevOps Project</p>
+
+                </div>
+
+                <button onclick="logout()">Logout</button>
+
+            </header>
+
+
+            <div class="container">
+
+                <!-- USER INFORMATION -->
+
+                <div class="welcome card">
+
+                    <h2>
+                        Welcome,
+                        <span id="userName"></span>
+                    </h2>
+
+                    <p>
+                        Role:
+                        <b id="userRole"></b>
+                    </p>
+
+                </div>
+
+
+                <!-- ACTION BUTTONS -->
+
+                <div class="actions">
+
+                    <button onclick="showLeaveForm()">
+                        Apply Leave
+                    </button>
+
+                    <button onclick="loadLeaves()">
+                        My Leave Status
+                    </button>
+
+                    <button onclick="loadPayroll()">
+                        My Payroll
+                    </button>
+
+                    <button
+                        id="managerButton"
+                        class="hidden"
+                        onclick="loadAllLeaves()"
+                    >
+                        Manage Leave Requests
+                    </button>
+
+                </div>
+
+
+                <!-- LEAVE FORM -->
+
+                <div id="leaveForm" class="card hidden">
+
+                    <h2>Apply for Leave</h2>
+
+                    <select id="leaveType">
+
+                        <option>Casual Leave</option>
+
+                        <option>Sick Leave</option>
+
+                        <option>Annual Leave</option>
+
+                    </select>
+
+                    <input
+                        id="fromDate"
+                        type="date"
+                    >
+
+                    <input
+                        id="toDate"
+                        type="date"
+                    >
+
+                    <input
+                        id="reason"
+                        placeholder="Reason"
+                    >
+
+                    <button onclick="applyLeave()">
+                        Submit Leave
+                    </button>
+
+                </div>
+
+
+                <!-- CONTENT -->
+
+                <div id="content" class="card">
+
+                    <h2>Dashboard</h2>
+
+                    <p>Select an option above.</p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <script src="app.js"></script>
+
+    </body>
+
+    </html>
+  style.css: |-
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        margin: 0;
+        font-family: Arial, sans-serif;
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    header {
+        background: #1e3a8a;
+        color: white;
+        padding: 20px 5%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    header h1 {
+        margin: 0;
+    }
+
+    header p {
+        margin: 5px 0 0;
+    }
+
+    button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 11px 18px;
+        margin: 5px;
+        border-radius: 6px;
+        cursor: pointer;
+    }
+
+    button:hover {
+        background: #1d4ed8;
+    }
+
+    .login-box {
+        background: white;
+        width: 400px;
+        max-width: 90%;
+        margin: 100px auto;
+        padding: 35px;
+        border-radius: 12px;
+        box-shadow: 0 5px 25px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+
+    input,
+    select {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+    }
+
+    .demo {
+        margin-top: 20px;
+        padding: 12px;
+        background: #f8fafc;
+        font-size: 13px;
+        line-height: 1.7;
+    }
+
+    .container {
+        max-width: 1000px;
+        margin: 30px auto;
+        padding: 0 20px;
+    }
+
+    .card {
+        background: white;
+        padding: 25px;
+        margin-bottom: 20px;
+        border-radius: 10px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.07);
+    }
+
+    .actions {
+        margin-bottom: 20px;
+    }
+
+    .item {
+        border: 1px solid #e2e8f0;
+        padding: 15px;
+        margin: 10px 0;
+        border-radius: 8px;
+    }
+
+    .status {
+        display: inline-block;
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-weight: bold;
+        font-size: 13px;
+    }
+
+    .pending {
+        background: #fef3c7;
+    }
+
+    .approved {
+        background: #dcfce7;
+    }
+
+    .rejected {
+        background: #fee2e2;
+    }
+
+    .hidden {
+        display: none;
+    }
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: employee-system
